@@ -18,8 +18,7 @@ export class MyRoom extends Room<State> {
       
       // skip dead players
       if (!entity) {
-        client.send("kickMessage", { message: "m đã chết, out ra chơi lại đê" })
-        
+        client.send("kickMessage", { message: "You have died, please rejoin." });
         return;
       }
 
@@ -29,55 +28,78 @@ export class MyRoom extends Room<State> {
       entity.angle = Math.atan2(entity.y - message.y, entity.x - message.x);
     });
 
-    this.onMessage("kick", (client) => {
+    this.onMessage("kick", (client, message) => {
       // Gửi message "kick" cho client trước khi disconnect
-      this.sendKickMessage(client);
+      this.sendKickMessage(client, message );
 
       // Sau đó, ngắt kết nối client
       this.kickClient(client);
     });
+    this.onMessage("kickUser" , (userName) => {
+      // Tìm client theo username
+      const client = this.clients.find(client => client.userData === userName);
+      if (client) {
+        // Gửi message "kick" cho client trước khi disconnect
+        this.sendKickMessage(client, "You have been kicked by the host.");
+
+        // Sau đó, ngắt kết nối client
+        this.kickClient(client);
+      }
+    })
+
 
     this.setSimulationInterval(() => this.state.update());
   }
 
   onJoin(client: Client, options: any) {
     console.log(client.sessionId, "JOINED");
-    this.state.createPlayer(client.sessionId);
+    const userName = options.username || client.sessionId;
+    client.userData = userName;
+
+    // Lấy username từ options (client gửi đến khi tham gia phòng)
+    const username = userName  // Nếu không có username, sử dụng sessionId
+
+    this.state.createPlayer(client.sessionId, username);  // Tạo người chơi trong state với username
+
+    // Gửi thông tin player mới cho tất cả các client
     const newPlayer = {
       id: client.id,
-      name: client.sessionId,
+      name: username,  // Gửi tên người chơi
       status: "joined"
-    }
+    };
+
     const listCurrentPlayers = this.clients.map(client => {
       return {
         id: client.id,
-        name: client.sessionId,
+        name: client.userData,  // Lấy sessionId làm tên tạm thời (có thể được thay thế bởi username)
         status: "joined"
-      }
-    })
-    
+      };
+    });
+
     this.broadcast("newPlayer", { newPlayer, listCurrentPlayers });
   }
 
   onLeave(client: Client) {
-    console.log(client.sessionId, "LEFT!");
-    const entity = this.state.entities[client.sessionId];
+    console.log(client.userData, "LEFT!");
     const player = {
       id: client.id,
-      name: client.sessionId,
+      name: client.userData,
       status: "left"
-    }
+    };
     this.broadcast("removePlayer", player);
+
     // entity may be already dead.
+    const entity = this.state.entities[client.sessionId];
     if (entity) { entity.dead = true; }
   }
 
-  kickClient(client) {
+  kickClient(client: Client) {
     // Disconnect the client from the room
-    client
+    this.clients[client.id].leave()
     console.log(`Client ${client.sessionId} has been kicked from the room.`);
   }
-  sendKickMessage(client) {
-    client.send("kickMessage", { message: "You have been kicked from the room." });
+
+  sendKickMessage(client: Client, message: string) {
+    client.send("kickMessage", { message});
   }
 }

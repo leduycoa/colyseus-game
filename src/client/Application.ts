@@ -5,8 +5,8 @@ import { State } from "../server/rooms/State";
 
 const ENDPOINT = "http://localhost:2567";
 const WORLD_SIZE = 2000;
+
 export const lerp = (a: number, b: number, t: number) => (b - a) * t + a;
-const listAddress: { [id: string]: { id: string; name: string } } = {};
 
 export class Application extends PIXI.Application {
   entities: { [id: string]: PIXI.Graphics } = {};
@@ -15,6 +15,7 @@ export class Application extends PIXI.Application {
   room: Room<State>;
   viewport: Viewport;
   _interpolation: boolean;
+  username: string = "";  // Store the username
 
   constructor() {
     super({
@@ -37,7 +38,8 @@ export class Application extends PIXI.Application {
 
     this.stage.addChild(this.viewport);
 
-    this.connect();
+    // Call the function to display the username form
+    this.displayUsernameForm();
     this.interpolation = false;
 
     // Event to track the mouse movement and send data
@@ -49,9 +51,40 @@ export class Application extends PIXI.Application {
     });
   }
 
-  async connect() {
-    this.room = await this.client.joinOrCreate<State>("my_room");
-    console.log("room", this.room);
+  // Show the username input form
+  displayUsernameForm() {
+    const usernameForm = document.getElementById("usernameForm")!;
+    const submitButton = document.getElementById("submitUsername")!;
+    const usernameInput = document.getElementById("username") as HTMLInputElement;
+
+     // Kiểm tra nếu phần tử tồn tại trước khi thao tác
+     if (usernameForm) {
+      // Hiển thị popup yêu cầu người dùng nhập tên
+      usernameForm.style.display = "block";
+  }
+
+    // Handle the submit button click
+    submitButton.addEventListener("click", () => {
+      const name = usernameInput.value.trim();
+
+      if (name) {
+        this.username = name;
+        this.createRoom();
+        document.getElementById('usernameForm')!.style.display = 'none';
+        console.log("username", this.username);
+      } else {
+        alert("Please enter a valid username.");
+      }
+    });
+  }
+
+  async createRoom() {
+    // Create a room with the username
+    this.room = await this.client.joinOrCreate<State>("my_room", {
+      username: this.username, // Pass the username to the server
+    });
+
+    console.log("room created", this.room);
 
     this.room.state.entities.onAdd((entity, sessionId: string) => {
       const color = entity.radius < 10 ? 0xff0000 : 0xffff0b;
@@ -113,18 +146,18 @@ export class Application extends PIXI.Application {
   }
 
 
-    // Initialize the user list
-    initUserList(listCurrentPlayers: any) {
+  // Initialize the user list
+  initUserList(listCurrentPlayers: any) {
         let userListElement: any = [];
         userListElement = document.getElementById("users");
-        userListElement.innerHTML = "";
+    userListElement.innerHTML = "";
         listCurrentPlayers.forEach((player: { name: string; id: string; status: string }) => {
-            let li = document.createElement("li");
-            li.id = player.id;
-            li.textContent = player.name;
-            userListElement.appendChild(li);
-        });
-    }
+      let li = document.createElement("li");
+      li.id = player.id;
+      li.textContent = player.name;
+      userListElement.appendChild(li);
+    });
+  }
 
   // Update the UI with the list of users
   updateUserList(player: { name: string; id: string; status: string }) {
@@ -133,7 +166,6 @@ export class Application extends PIXI.Application {
     if (player.status === "joined") {
       // Kiểm tra nếu phần tử li đã tồn tại với id của người chơi
       let existingLi = document.getElementById(player.id);
-
       if (!existingLi) {
         // Người chơi chưa có trong danh sách, thêm mới vào
         existingLi = document.createElement("li");
@@ -151,6 +183,11 @@ export class Application extends PIXI.Application {
         existingLi.remove();
       }
     }
+  }
+
+  //kick user in room
+  kickUser(userName: string) {
+    this.room.send("kickUser", { userName });
   }
 
   set interpolation(bool: boolean) {

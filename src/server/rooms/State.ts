@@ -1,6 +1,5 @@
 import { generateId } from "colyseus";
 import { Schema, type, MapSchema, filterChildren } from "@colyseus/schema";
-
 import { Entity } from "./Entity";
 import { Player } from "./Player";
 
@@ -19,13 +18,15 @@ export class State extends Schema {
         const b = value.y - currentPlayer.y;
 
         return (Math.sqrt(a * a + b * b)) <= 500;
-
     } else {
         return false;
     }
   })
   @type({ map: Entity })
   entities = new MapSchema<Entity>();
+
+  @type({ map: "string" }) // Lưu trữ tên người chơi (username) theo sessionId
+  playerNames = new MapSchema<string>();
 
   initialize () {
     // create some food entities
@@ -43,11 +44,12 @@ export class State extends Schema {
     this.entities.set(generateId(), food);
   }
 
-  createPlayer(sessionId: string) {
+  createPlayer(sessionId: string, username: string) {
     this.entities.set(sessionId, new Player().assign({
       x: Math.random() * this.width,
       y: Math.random() * this.height
     }));
+    this.playerNames.set(sessionId, username);  // Lưu tên người chơi vào playerNames
   }
 
   update() {
@@ -78,7 +80,6 @@ export class State extends Schema {
             // create a replacement food
             if (collideTestEntity.radius < DEFAULT_PLAYER_RADIUS) {
               this.createFood();
-
             } else {
               console.log(loserEntityId, "has been eaten!");
             }
@@ -97,9 +98,6 @@ export class State extends Schema {
         if (entity.y > WORLD_SIZE) { entity.y = WORLD_SIZE; }
 
       } else {
-        //
-        // touch all satic entities for filtering by distance...
-        //
         entity['$changes'].touch(0);
       }
     });
