@@ -76,11 +76,47 @@
       #users li:hover {
         background: #444;
       }
+
+      /* Popup styles */
+      #kickPopup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 8px;
+        color: white;
+        text-align: center;
+        z-index: 1000;
+        display: none;
+      }
+
+      #kickPopup input {
+        padding: 10px;
+        margin-top: 10px;
+        width: 200px;
+        font-size: 16px;
+      }
+
+      #kickPopup button {
+        padding: 10px 20px;
+        margin-top: 10px;
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      #kickPopup button:hover {
+        background-color: #e53935;
+      }
     </style>
   </head>
   <body>
     <!-- User name form (popup initially) -->
-    <div id="usernameForm" , style="display: none">
+    <div id="usernameForm" style="display: none">
       <label for="username">Enter your username:</label>
       <input type="text" id="username" placeholder="Your username" />
       <button id="submitUsername">Confirm</button>
@@ -100,13 +136,16 @@
         <h3>Users in Room:</h3>
         <ul id="users"></ul>
       </div>
+      <!-- Button to trigger kick popup -->
+      <button id="kickBtn">Kick Player</button>
     </div>
 
-    <div id="kickPopup" style="display: none">
+    <!-- Kick Player Popup -->
+    <div id="kickPopup">
       <div class="popup-content">
-        <label for="username">Enter your username want to kic:</label>
-        <input type="text" id="username" placeholder="Your username" />
-        <button id="submitUsername">Confirm</button>
+        <label for="kickUsername">Enter username to kick:</label>
+        <input type="text" id="kickUsername" placeholder="Username" />
+        <button id="submitKick">Kick</button>
       </div>
     </div>
 

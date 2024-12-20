@@ -35,18 +35,19 @@ export class MyRoom extends Room<State> {
       // Sau đó, ngắt kết nối client
       this.kickClient(client);
     });
-    this.onMessage("kickUser" , (userName) => {
+    this.onMessage("kickUser" , (client, options) => {
       // Tìm client theo username
-      const client = this.clients.find(client => client.userData === userName);
-      if (client) {
+      const clientNeedKick = this.clients.find(c => c.userData === options.userName);
+      if (clientNeedKick) {
         // Gửi message "kick" cho client trước khi disconnect
-        this.sendKickMessage(client, "You have been kicked by the host.");
+        this.sendKickMessage(clientNeedKick, "You have been kicked by the host.");
 
         // Sau đó, ngắt kết nối client
-        this.kickClient(client);
+        this.kickClient(clientNeedKick);
       }
     })
 
+    
 
     this.setSimulationInterval(() => this.state.update());
   }
@@ -95,7 +96,8 @@ export class MyRoom extends Room<State> {
 
   kickClient(client: Client) {
     // Disconnect the client from the room
-    this.clients[client.id].leave()
+    const entity = this.state.entities[client.sessionId];
+    if (entity) { entity.dead = true; }
     console.log(`Client ${client.sessionId} has been kicked from the room.`);
   }
 

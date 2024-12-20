@@ -49,6 +49,28 @@ export class Application extends PIXI.Application {
         this.room.send("mouse", { x: point.x, y: point.y });
       }
     });
+
+    // Kick button click event to show the kick popup
+    document.getElementById("kickBtn")?.addEventListener("click", () => {
+      document.getElementById("kickPopup")!.style.display = "block";
+    });
+
+    // Submit kick player
+    document.getElementById("submitKick")?.addEventListener("click", () => {
+      const userNameToKick = (document.getElementById("kickUsername") as HTMLInputElement).value.trim();
+      console.log("userNameToKick", userNameToKick);
+      if (userNameToKick) {
+        if(userNameToKick === this.username) {
+          alert("You can't kick yourself.");
+          document.getElementById("kickPopup")!.style.display = "none";
+          return;
+        }
+        this.kickUser(userNameToKick);
+        document.getElementById("kickPopup")!.style.display = "none";
+      } else {
+        alert("Please enter a username.");
+      }
+    });
   }
 
   // Show the username input form
@@ -57,11 +79,8 @@ export class Application extends PIXI.Application {
     const submitButton = document.getElementById("submitUsername")!;
     const usernameInput = document.getElementById("username") as HTMLInputElement;
 
-     // Kiểm tra nếu phần tử tồn tại trước khi thao tác
-     if (usernameForm) {
-      // Hiển thị popup yêu cầu người dùng nhập tên
-      usernameForm.style.display = "block";
-  }
+    // Hiển thị popup yêu cầu người dùng nhập tên
+    usernameForm.style.display = "block";
 
     // Handle the submit button click
     submitButton.addEventListener("click", () => {
@@ -145,13 +164,12 @@ export class Application extends PIXI.Application {
     });
   }
 
-
   // Initialize the user list
   initUserList(listCurrentPlayers: any) {
-        let userListElement: any = [];
-        userListElement = document.getElementById("users");
+    let userListElement: any = [];
+    userListElement = document.getElementById("users");
     userListElement.innerHTML = "";
-        listCurrentPlayers.forEach((player: { name: string; id: string; status: string }) => {
+    listCurrentPlayers.forEach((player: { name: string; id: string; status: string }) => {
       let li = document.createElement("li");
       li.id = player.id;
       li.textContent = player.name;
@@ -185,7 +203,7 @@ export class Application extends PIXI.Application {
     }
   }
 
-  //kick user in room
+  // Kick user in room
   kickUser(userName: string) {
     this.room.send("kickUser", { userName });
   }
